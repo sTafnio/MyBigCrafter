@@ -30,6 +30,46 @@ public static class TargetEvaluator
         return req.MustHave ? present : !present;
     }
 
+    /// <summary>Counts the item's explicit+fractured mods (optionally one affix side only) that match at least
+    /// one requirement of a mod set - or, with <paramref name="invert"/>, match NONE of them ("junk" counting).
+    /// Each item mod counts once no matter how many set entries it satisfies (hybrids can't double-count), and
+    /// an entry's tier / min-roll bounds must be met for it to count. Used by Set condition leaves.</summary>
+    public static int CountInSet(IReadOnlyList<ModRequirement> reqs, ItemData item, SetScope scope, bool invert)
+    {
+        if (item?.ModsInfo == null) return 0;
+        return CountList(item.ModsInfo.ExplicitMods) + CountList(item.ModsInfo.FracturedMods);
+
+        int CountList(IEnumerable modList)
+        {
+            if (modList == null) return 0;
+            var count = 0;
+            foreach (dynamic mod in modList)
+            {
+                string key = mod.ModRecord?.Key;
+                if (string.IsNullOrEmpty(key)) continue;
+
+                if (scope != SetScope.Mods)
+                {
+                    var gen = PoeModData.Instance.ClassifyMod(key)?.GenerationType;
+                    if (gen != (scope == SetScope.Prefixes ? "prefix" : "suffix")) continue;
+                }
+
+                var values = mod.Values;
+                var n = values != null ? (int)values.Count : 0;
+                var vals = new int[n];
+                for (var i = 0; i < n; i++) vals[i] = (int)values[i];
+
+                var matched = false;
+                if (reqs != null)
+                    foreach (var req in reqs)
+                        if (req != null && MatchesKey(req, key, vals, item.Path)) { matched = true; break; }
+
+                if (matched != invert) count++;
+            }
+            return count;
+        }
+    }
+
     // The element type of these mod lists lives in a referenced DLL; iterate as a plain IEnumerable and read
     // the mod's key + values via dynamic, so no DLL type name needs to be spelled out here.
     private static bool AnyMatch(ModRequirement req, IEnumerable modList, ItemData item)

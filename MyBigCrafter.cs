@@ -38,6 +38,7 @@ public class MyBigCrafter : BaseSettingsPlugin<MyBigCrafterSettings>
     private string[] _currencyTabs = Array.Empty<string>();   // Currency tabs -- currency role only
     private int _loadIdx = -1;   // -1 = nothing selected in the Open dropdown
     private bool _queueAddOpen;
+    private bool _queueAddFocus;   // raise the add-craft window on its next draw (set on open/re-open)
     private string _queueAddSearch = "";
     private string _status = "";
     private string _loadedName = "";   // file the current craft was loaded/saved as ("" = unsaved)
@@ -180,7 +181,7 @@ public class MyBigCrafter : BaseSettingsPlugin<MyBigCrafterSettings>
         else
             DrawQueueList();
 
-        if (ImGui.Button("Add craft")) { _queueAddOpen = true; _queueAddSearch = ""; }
+        if (ImGui.Button("Add craft")) { _queueAddOpen = true; _queueAddFocus = true; _queueAddSearch = ""; }
 
         DrawQueueAddWindow();
     }
@@ -229,6 +230,7 @@ public class MyBigCrafter : BaseSettingsPlugin<MyBigCrafterSettings>
         if (!_queueAddOpen) return;
 
         ImGui.SetNextWindowSize(new Vector2(320, 380), ImGuiCond.FirstUseEver);
+        if (_queueAddFocus) { ImGui.SetNextWindowFocus(); _queueAddFocus = false; }
         var open = true;
         // NoDocking: these tool windows must not be dockable - docking them together triggers an ImGui
         // resize feedback loop that flickers white and freezes (forced a manual imgui.ini delete to recover).
@@ -290,12 +292,22 @@ public class MyBigCrafter : BaseSettingsPlugin<MyBigCrafterSettings>
             return;
         }
 
+        // The representative base + domain drive mod picking on the Mod Sets tab and in the condition editor.
+        var domain = CraftDomain.For(_plan.ItemClass, BaseTaxonomy.CategoryOfClass(_plan.ItemClass));
+        var repBase = BaseTaxonomy.RepresentativeBase(_plan.ItemClass, _plan.Subtype, _plan.BasePaths);
+
         if (ImGui.BeginTabBar("##mbc_craft", ImGuiTabBarFlags.None))
         {
             if (ImGui.BeginTabItem("Item Selection"))
             {
                 ImGui.Spacing();
                 ItemSelectionEditor.Draw(_plan);
+                ImGui.EndTabItem();
+            }
+            if (ImGui.BeginTabItem("Mod Sets"))
+            {
+                ImGui.Spacing();
+                ModSetEditor.Draw(_plan, repBase, domain);
                 ImGui.EndTabItem();
             }
             if (ImGui.BeginTabItem("Crafting Steps"))
@@ -308,9 +320,7 @@ public class MyBigCrafter : BaseSettingsPlugin<MyBigCrafterSettings>
         }
 
         // Shared condition editor window (item filter + Check nodes) - rendered here so it shows on any sub-tab.
-        var domain = CraftDomain.For(_plan.ItemClass, BaseTaxonomy.CategoryOfClass(_plan.ItemClass));
-        var repBase = BaseTaxonomy.RepresentativeBase(_plan.ItemClass, _plan.Subtype, _plan.BasePaths);
-        ConditionEditor.DrawWindow(repBase, domain, _plan.ItemClass, _plan.ClusterTypes);
+        ConditionEditor.DrawWindow(_plan, repBase, domain);
     }
 
     private void DrawToolbar()
@@ -341,7 +351,7 @@ public class MyBigCrafter : BaseSettingsPlugin<MyBigCrafterSettings>
         ImGui.SameLine();
         if (ImGui.Button("Duplicate"))
         {
-            var clone = _storage.Import(_storage.Export(_plan));
+            var clone = _storage.Import(_storage.Export(_plan), out _);
             if (clone != null) { clone.Name = _plan.Name + " copy"; _plan = clone; _loadedName = ""; _status = "Duplicated - save it to keep it"; }
         }
         Tip("Copy this craft under a new name (the original is untouched).");
@@ -381,20 +391,43 @@ public class MyBigCrafter : BaseSettingsPlugin<MyBigCrafterSettings>
         Tip("Delete the selected craft's file.");
         ImGui.EndDisabled();
 
-        // Share via the clipboard.
+        // Share via the clipboard. Talks to the OS clipboard directly (ClipboardUtil) - ImGui's clipboard
+        // depends on backend wiring and silently broke share strings.
         ImGui.AlignTextToFramePadding();
         ImGui.TextColored(UiColors.Accent, "Share");
         ImGui.SameLine(labelW);
         if (ImGui.Button("Import from clipboard"))
         {
-            var imported = _storage.Import(ImGui.GetClipboardText());
-            if (imported != null) { _plan = imported; _loadedName = ""; _status = $"Imported '{imported.Name}'"; }
-            else _status = "Clipboard is not a valid craft";
+            var imported = _storage.Import(ClipboardUtil.GetText(), out var importError);
+            if (imported == null)
+            {
+                _status = "Import failed: " + importError;
+            }
+            else
+            {
+                _plan = imported;
+                _loadedName = "";
+                _status = string.IsNullOrWhiteSpace(imported.Name)
+                    ? "Imported an unnamed craft - name it and Save to keep it"
+                    : $"Imported '{imported.Name}' - Save to keep it";
+            }
         }
         Tip("Create a craft from a share string on the clipboard.");
         ImGui.SameLine();
-        if (ImGui.Button("Export to clipboard")) { ImGui.SetClipboardText(_storage.Export(_plan)); _status = "Copied share string to clipboard"; }
-        Tip("Copy this craft as a share string to the clipboard.");
+        // Exporting requires a name for the same reason Save does - it exports the craft IN THE EDITOR, and
+        // an unnamed (usually blank) editor exports an empty craft that then "imports as nothing" elsewhere.
+        ImGui.BeginDisabled(!canSave);
+        if (ImGui.Button("Export to clipboard"))
+        {
+            _status = ClipboardUtil.SetText(_storage.Export(_plan))
+                ? "Copied share string to clipboard"
+                : "Clipboard is in use by another app - try exporting again";
+        }
+        ImGui.EndDisabled();
+        if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))   // plain Tip() never shows on a disabled button
+            ImGui.SetTooltip(canSave
+                ? "Copy this craft as a share string to the clipboard."
+                : "Name the craft first - Export shares the craft currently in the editor.");
 
         if (!string.IsNullOrEmpty(_status))
         {

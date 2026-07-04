@@ -117,16 +117,24 @@ public sealed class CraftStorage
         return SharePrefixV2 + Convert.ToBase64String(ms.ToArray());
     }
 
-    /// <summary>Accepts an "MBC2:" share string, or raw JSON (handy for hand-editing). Null if invalid.</summary>
-    public CraftPlan Import(string text)
-    {
-        try
-        {
-            if (string.IsNullOrWhiteSpace(text)) return null;
-            text = text.Trim();
+    // Native clipboards can hand back stray NUL terminators/BOMs, and chat apps like to wrap pastes in
+    // quotes - none of which plain Trim() removes.
+    private static readonly char[] ShareTrimChars =
+        { '\0', '\uFEFF', '\u200B', '"', '\'', ' ', '\t', '\r', '\n' };
 
-            string json;
-            if (text.StartsWith(SharePrefixV2, StringComparison.Ordinal))
+    /// <summary>Accepts an "MBC2:" share string, or raw JSON (handy for hand-editing). Null if invalid, with
+    /// the reason in <paramref name="error"/> so the toolbar can say WHY instead of failing silently.</summary>
+    public CraftPlan Import(string text, out string error)
+    {
+        error = null;
+        if (string.IsNullOrWhiteSpace(text)) { error = "the clipboard has no text"; return null; }
+
+        text = text.Trim(ShareTrimChars);
+
+        string json;
+        if (text.StartsWith(SharePrefixV2, StringComparison.Ordinal))
+        {
+            try
             {
                 var data = Convert.FromBase64String(text[SharePrefixV2.Length..]);
                 using var ms = new MemoryStream(data);
@@ -134,16 +142,28 @@ public sealed class CraftStorage
                 using var sr = new StreamReader(ds, Encoding.UTF8);
                 json = sr.ReadToEnd();
             }
-            else if (text.StartsWith("{", StringComparison.Ordinal))
-            {
-                json = text;
-            }
-            else return null;
-
-            return JsonConvert.DeserializeObject<CraftPlan>(json, JsonSettings);
+            catch (Exception e) { error = "corrupt share string (" + e.Message + ")"; return null; }
         }
-        catch { return null; }
+        else if (text.StartsWith("{", StringComparison.Ordinal))
+        {
+            json = text;
+        }
+        else
+        {
+            error = $"not a craft share string (clipboard starts with '{Snippet(text)}')";
+            return null;
+        }
+
+        try
+        {
+            var plan = JsonConvert.DeserializeObject<CraftPlan>(json, JsonSettings);
+            if (plan == null) { error = "the share string contained no craft"; return null; }
+            return plan;
+        }
+        catch (Exception e) { error = "craft JSON didn't parse (" + e.Message + ")"; return null; }
     }
+
+    private static string Snippet(string s) => s.Length <= 24 ? s : s[..24] + "...";
 
     private static string Sanitize(string name)
     {

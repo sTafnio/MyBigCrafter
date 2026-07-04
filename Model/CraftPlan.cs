@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 namespace MyBigCrafter.Model;
@@ -52,5 +53,48 @@ public sealed class CraftPlan
     /// <summary>Which items this craft applies to (on top of class+bases): a condition tree (empty = all).</summary>
     public Condition Filter { get; set; } = new();
 
+    /// <summary>Named mod lists (defined on the Mod Sets tab) that Set condition leaves count against.</summary>
+    public List<ModSet> ModSets { get; set; } = new();
+
     public CraftGraph Graph { get; set; } = new();
+
+    public ModSet FindSet(string name) =>
+        string.IsNullOrEmpty(name) ? null
+            : ModSets.Find(s => string.Equals(s.Name, name, StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>How many Set leaves (item filter + every Check node) reference the named set.</summary>
+    public int CountSetReferences(string name)
+    {
+        var count = 0;
+        VisitConditions(c =>
+        {
+            if (c.Kind == CondKind.Set && string.Equals(c.Set, name, StringComparison.OrdinalIgnoreCase)) count++;
+        });
+        return count;
+    }
+
+    /// <summary>Renames a set AND every leaf referencing it in one step, so dangling names can't exist.</summary>
+    public void RenameSet(string oldName, string newName)
+    {
+        var set = FindSet(oldName);
+        if (set != null) set.Name = newName;
+        VisitConditions(c =>
+        {
+            if (c.Kind == CondKind.Set && string.Equals(c.Set, oldName, StringComparison.OrdinalIgnoreCase)) c.Set = newName;
+        });
+    }
+
+    private void VisitConditions(Action<Condition> fn)
+    {
+        Visit(Filter, fn);
+        foreach (var n in Graph.Nodes) Visit(n.Check, fn);
+    }
+
+    private static void Visit(Condition c, Action<Condition> fn)
+    {
+        if (c == null) return;
+        fn(c);
+        if (c.Children == null) return;
+        foreach (var ch in c.Children) Visit(ch, fn);
+    }
 }

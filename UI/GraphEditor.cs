@@ -26,6 +26,8 @@ public static class GraphEditor
     private static int _linkPin;        // 0 = Next, 1 = OnTrue, 2 = OnFalse
     private static int _applyEdit = -1; // Apply node whose currency window is open (-1 = none)
     private static int _harvestEdit = -1; // Harvest node whose craft-picker window is open (-1 = none)
+    private static bool _applyFocus;    // raise the Apply window on its next draw (set on open/re-open)
+    private static bool _harvestFocus;  // raise the Harvest window on its next draw (set on open/re-open)
     private static Vector2 _addAtPos;   // graph-space position for the empty-canvas "add node" menu
     private static string _curFilter = "";
     private static string _harvestFilter = "";
@@ -67,6 +69,7 @@ public static class GraphEditor
         if (node == null || node.Type != NodeType.Apply) { _applyEdit = -1; return; }
 
         ImGui.SetNextWindowSize(new Vector2(320, 0), ImGuiCond.FirstUseEver);
+        if (_applyFocus) { ImGui.SetNextWindowFocus(); _applyFocus = false; }
         var open = true;
         if (ImGui.Begin("Apply step##applyedit", ref open))
         {
@@ -114,6 +117,7 @@ public static class GraphEditor
         if (node == null || node.Type != NodeType.Harvest) { _harvestEdit = -1; return; }
 
         ImGui.SetNextWindowSize(new Vector2(470, 430), ImGuiCond.FirstUseEver);
+        if (_harvestFocus) { ImGui.SetNextWindowFocus(); _harvestFocus = false; }
         var open = true;
         if (ImGui.Begin("Harvest craft##harvestedit", ref open, ImGuiWindowFlags.NoDocking))
         {
@@ -148,12 +152,13 @@ public static class GraphEditor
 
     private static void OpenCheck(CraftNode n) => ConditionEditor.Open($"chk{n.Id}", n.Check, "Edit Check");
 
-    /// <summary>Opens the node's editor: Apply -> currency window, Check -> condition window. No-op for Start/Finish.</summary>
+    /// <summary>Opens the node's editor: Apply -> currency window, Check -> condition window. No-op for
+    /// Start/Finish. Re-opening an already-open window raises it (it may sit behind the main window).</summary>
     private static void EditNode(CraftNode n)
     {
         if (n.Type == NodeType.Check) OpenCheck(n);
-        else if (n.Type == NodeType.Apply) _applyEdit = n.Id;
-        else if (n.Type == NodeType.Harvest) { _harvestEdit = n.Id; _harvestFilter = ""; }
+        else if (n.Type == NodeType.Apply) { _applyEdit = n.Id; _applyFocus = true; }
+        else if (n.Type == NodeType.Harvest) { _harvestEdit = n.Id; _harvestFilter = ""; _harvestFocus = true; }
     }
 
     /// <summary>Duplicates a node next to itself (deep-cloning its Check tree so they don't alias), unlinked.</summary>

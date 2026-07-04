@@ -29,6 +29,7 @@ public static class ModAffixPicker
 
     private static readonly Dictionary<string, string> Search = new();
     private static string _openId;
+    private static bool _focusNext;   // bring the window to the front on the next Draw (set by Show)
     private static readonly HashSet<string> Expanded = new();
 
     // Frameless tier-expand arrow: invisible background, faint highlight on hover/press.
@@ -44,16 +45,26 @@ public static class ModAffixPicker
     private static readonly (string Key, string Name)[] MapTiers =
         { ("uber", "Uber"), ("top_tier_map", "High"), ("mid_tier_map", "Mid"), ("low_tier_map", "Low") };
 
-    public static void Show(string id) => _openId = id;
+    // Show also re-raises an already-open window: clicking the thing that opens it again must bring it back
+    // to the front instead of leaving it buried behind the main window (e.g. after alt-tabbing away).
+    public static void Show(string id)
+    {
+        _openId = id;
+        _focusNext = true;
+    }
 
+    /// <summary><paramref name="includeEldritch"/>: offer the Searing Exarch / Eater implicit sections in
+    /// Explicit mode. Off for mod sets, whose leaves only count explicit mods - an eldritch entry there
+    /// could never match, so it isn't offered.</summary>
     public static PickResult? Draw(string id, string basePath, string domain, string itemClass,
-        PickMode mode = PickMode.Explicit, IReadOnlyList<string> clusterTypeTags = null)
+        PickMode mode = PickMode.Explicit, IReadOnlyList<string> clusterTypeTags = null, bool includeEldritch = true)
     {
         if (_openId != id) return null;
 
         PickResult? picked = null;
 
         ImGui.SetNextWindowSize(new Vector2(720, 520), ImGuiCond.FirstUseEver);
+        if (_focusNext) { ImGui.SetNextWindowFocus(); _focusNext = false; }
         var open = true;
         // NoDocking: avoid the docking resize-loop that flickers white and freezes these tool windows.
         if (ImGui.Begin("Pick a mod###modpick", ref open, ImGuiWindowFlags.NoDocking))
@@ -84,7 +95,7 @@ public static class ModAffixPicker
                     default:
                         picked = ExplicitColumns(basePath, itemClass, domain, q, fo, clusterTypeTags);
 
-                        if (picked == null && EligibleEldritch(basePath))
+                        if (picked == null && includeEldritch && EligibleEldritch(basePath))
                             picked = RenderSection(MakeSec("Searing Exarch implicits", "exarch",
                                          ModFamilies.For(basePath, "ExarchImplicit"), "ExarchImplicit", "", false, domain, false, true), q, fo)
                                      ?? RenderSection(MakeSec("Eater of Worlds implicits", "eater",
@@ -95,7 +106,7 @@ public static class ModAffixPicker
         }
         ImGui.End();
 
-        if (picked != null) open = false;
+        if (picked != null) { open = false; Expanded.Clear(); }   // next pick starts with every tier list folded
         if (!open) _openId = null;
         return picked;
     }

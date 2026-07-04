@@ -121,7 +121,7 @@ public sealed class CraftExecutor
                     _areaHash = _gc.Area?.CurrentArea?.Hash ?? 0;
 
                     var matching = _reader.ReadInventory().Where(i => ItemMatcher.Matches(plan, i.Data)).ToList();
-                    var items = matching.Where(i => GraphSimulator.WillCraft(plan.Graph, i.Data)).ToList();
+                    var items = matching.Where(i => GraphSimulator.WillCraft(plan, i.Data)).ToList();
                     LogWorkCount(items.Count, matching.Count - items.Count, "in inventory");
 
                     foreach (var item in items)
@@ -266,7 +266,7 @@ public sealed class CraftExecutor
                     var occupant = _reader.ReadHarvestBenchCraftable();
                     if (occupant != null)
                     {
-                        if (ItemMatcher.MatchesBase(plan, occupant.Data) && GraphSimulator.WillCraft(plan.Graph, occupant.Data))
+                        if (ItemMatcher.MatchesBase(plan, occupant.Data) && GraphSimulator.WillCraft(plan, occupant.Data))
                         {
                             Log($"Resuming the item already in the bench ('{occupant.Data.BaseName}').");
                             if (!await CraftAndDeposit(plan, occupant, input, ct)) return true; // stopped; item stays in the bench
@@ -282,7 +282,7 @@ public sealed class CraftExecutor
                     // Snapshot the matching, not-yet-finished inventory items ONCE - finished items return to the
                     // inventory but are not reprocessed (the snapshot is fixed), and untouched items keep their cells.
                     var matching = _reader.ReadInventory().Where(i => ItemMatcher.Matches(plan, i.Data)).ToList();
-                    var items = matching.Where(i => GraphSimulator.WillCraft(plan.Graph, i.Data)).ToList();
+                    var items = matching.Where(i => GraphSimulator.WillCraft(plan, i.Data)).ToList();
                     LogWorkCount(items.Count, matching.Count - items.Count, "in inventory");
 
                     foreach (var snap in items)
@@ -462,7 +462,7 @@ public sealed class CraftExecutor
         // and stop without a final empty trip back to the input tab once they're all done.
         if (!await stash.SwitchToTab(inIdx, input, ct)) { Log("Couldn't switch to the input tab - stopping."); return false; }
         var inItems = _reader.ReadVisibleStash().Where(i => ItemMatcher.Matches(plan, i.Data)).ToList();
-        var remaining = inItems.Count(i => GraphSimulator.WillCraft(plan.Graph, i.Data));
+        var remaining = inItems.Count(i => GraphSimulator.WillCraft(plan, i.Data));
         LogWorkCount(remaining, inItems.Count - remaining, "in the input tab");
 
         while (true)
@@ -562,7 +562,7 @@ public sealed class CraftExecutor
     /// graph wouldn't immediately finish it without any work. Used when pulling input items, so already-finished
     /// items are left in place (they may be a base for a later craft) instead of being shuttled around for nothing.</summary>
     private ReadItem FirstMatchToCraft(CraftPlan plan, CraftSource source) =>
-        _reader.Read(source).FirstOrDefault(i => ItemMatcher.Matches(plan, i.Data) && GraphSimulator.WillCraft(plan.Graph, i.Data));
+        _reader.Read(source).FirstOrDefault(i => ItemMatcher.Matches(plan, i.Data) && GraphSimulator.WillCraft(plan, i.Data));
 
     /// <summary>Finds an inventory item by exact base name - used to re-locate the in-transit crafted item, whose mods/rarity may no longer match the plan filter.</summary>
     private ReadItem FirstInventoryByBase(string baseName) =>
@@ -662,7 +662,7 @@ public sealed class CraftExecutor
                 {
                     var data = Resolve();
                     if (data == null) { Log($"{name}: item no longer present."); return CraftOutcome.Stop; }
-                    var pass = CheckEvaluator.Passes(current.Check, data);
+                    var pass = CheckEvaluator.Passes(current.Check, data, plan.ModSets);
                     current = graph.Get(pass ? current.OnTrue : current.OnFalse);
                     break;
                 }

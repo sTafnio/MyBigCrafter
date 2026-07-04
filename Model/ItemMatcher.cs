@@ -10,7 +10,7 @@ public static class ItemMatcher
 {
     /// <summary>Full match: the base selection plus the advanced filter. Used to pick input items to craft.</summary>
     public static bool Matches(CraftPlan plan, ItemData item) =>
-        MatchesBase(plan, item) && CheckEvaluator.Passes(plan.Filter, item);
+        MatchesBase(plan, item) && CheckEvaluator.Passes(plan.Filter, item, plan.ModSets);
 
     /// <summary>Base selection only (class + subtype + cluster type + bases), ignoring the advanced filter.
     /// Used to recognise an item already in the currency tab, which may be mid-craft and no longer pass it.</summary>

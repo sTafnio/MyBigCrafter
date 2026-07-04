@@ -13,8 +13,9 @@ namespace MyBigCrafter.Model;
 /// </summary>
 public static class GraphSimulator
 {
-    public static bool WillCraft(CraftGraph graph, ItemData item)
+    public static bool WillCraft(CraftPlan plan, ItemData item)
     {
+        var graph = plan?.Graph;
         if (graph?.Start == null || item == null) return false;
 
         var current = graph.Get(graph.Start.Next);
@@ -37,7 +38,7 @@ public static class GraphSimulator
 
                 case NodeType.Check:
                     if (!seenChecks.Add(current.Id)) return false;   // Check-only loop: never reaches work
-                    var pass = CheckEvaluator.Passes(current.Check, item);
+                    var pass = CheckEvaluator.Passes(current.Check, item, plan.ModSets);
                     current = graph.Get(pass ? current.OnTrue : current.OnFalse);
                     break;
 

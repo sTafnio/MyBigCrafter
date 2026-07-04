@@ -4,29 +4,43 @@ using ItemFilterLibrary;
 
 namespace MyBigCrafter.Model;
 
-/// <summary>Evaluates a Check node's <see cref="Condition"/> tree against an item (pass -> green, fail -> red).</summary>
+/// <summary>Evaluates a Check node's <see cref="Condition"/> tree against an item (pass -> green, fail -> red).
+/// <paramref name="sets"/> is the owning plan's mod-set list, which Set leaves count against.</summary>
 public static class CheckEvaluator
 {
     private static readonly Dictionary<string, ItemQuery> RawCache = new();
 
-    public static bool Passes(Condition root, ItemData item)
+    public static bool Passes(Condition root, ItemData item, IReadOnlyList<ModSet> sets)
     {
         if (item == null) return false;
         if (root == null) return true;
-        return Eval(root, item);
+        return Eval(root, item, sets);
     }
 
-    private static bool Eval(Condition c, ItemData item)
+    private static bool Eval(Condition c, ItemData item, IReadOnlyList<ModSet> sets)
     {
         var r = c.Kind switch
         {
-            CondKind.Group => EvalGroup(c, item),
+            CondKind.Group => EvalGroup(c, item, sets),
             CondKind.Field => EvalField(c, item),
             CondKind.HasMod => c.Mod != null && TargetEvaluator.SatisfiedForCheck(c.Mod, item),
+            CondKind.Set => EvalSet(c, item, sets),
             CondKind.Raw => EvalRaw(c.Value, item),
             _ => true,
         };
         return c.Negate ? !r : r;
+    }
+
+    // The editor keeps set references non-dangling (renames propagate, deletes are blocked while referenced),
+    // so an unknown name only occurs on a hand-edited file - fail the leaf rather than silently pass.
+    private static bool EvalSet(Condition c, ItemData item, IReadOnlyList<ModSet> sets)
+    {
+        ModSet set = null;
+        if (sets != null && !string.IsNullOrEmpty(c.Set))
+            foreach (var s in sets)
+                if (string.Equals(s.Name, c.Set, StringComparison.OrdinalIgnoreCase)) { set = s; break; }
+        if (set == null) return false;
+        return c.Number.Matches(TargetEvaluator.CountInSet(set.Mods, item, c.SetScope, c.SetInvert));
     }
 
     private static bool EvalField(Condition c, ItemData item)
@@ -42,13 +56,13 @@ public static class CheckEvaluator
         };
     }
 
-    private static bool EvalGroup(Condition c, ItemData item)
+    private static bool EvalGroup(Condition c, ItemData item, IReadOnlyList<ModSet> sets)
     {
         if (c.Children.Count == 0) return true;
 
         var t = 0;
         foreach (var ch in c.Children)
-            if (Eval(ch, item)) t++;
+            if (Eval(ch, item, sets)) t++;
 
         return c.Op switch
         {
