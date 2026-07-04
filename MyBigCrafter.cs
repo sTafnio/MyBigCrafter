@@ -203,7 +203,7 @@ public class MyBigCrafter : BaseSettingsPlugin<MyBigCrafterSettings>
             var xW = ImGui.CalcTextSize("X").X + style.FramePadding.X * 2;
             var labelW = Math.Max(60f, ImGui.GetContentRegionAvail().X - xW - style.ItemSpacing.X);
             ImGui.Selectable(_run.Queue[i], false, ImGuiSelectableFlags.None, new Vector2(labelW, 0));
-            if (ImGui.IsItemHovered()) ImGui.SetTooltip(_run.Queue[i]);
+            if (ImGui.IsItemHovered()) UiText.Tooltip(_run.Queue[i]);
 
             // Drag a row off itself to swap with the neighbour in the drag direction (ImGui reorder idiom).
             if (ImGui.IsItemActive() && !ImGui.IsItemHovered())
@@ -245,6 +245,7 @@ public class MyBigCrafter : BaseSettingsPlugin<MyBigCrafterSettings>
                 var any = false;
                 foreach (var name in _craftFiles)
                 {
+                    if (name.Contains("template", StringComparison.OrdinalIgnoreCase)) continue; // starting points, never run directly
                     if (_run.Queue.Contains(name)) continue; // each craft only once
                     if (q.Length > 0 && !name.Contains(q, StringComparison.OrdinalIgnoreCase)) continue;
                     any = true;
@@ -432,7 +433,7 @@ public class MyBigCrafter : BaseSettingsPlugin<MyBigCrafterSettings>
         if (!string.IsNullOrEmpty(_status))
         {
             ImGui.Spacing();
-            ImGui.TextColored(UiColors.Match, _status);
+            UiText.Colored(UiColors.Match, _status);   // may carry craft names / import-error snippets ('%'!)
         }
         ImGui.Separator();
     }

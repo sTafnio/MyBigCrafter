@@ -125,7 +125,7 @@ public static class GraphEditor
             ImGui.TextUnformatted("Craft:");
             ImGui.SameLine();
             var has = !string.IsNullOrEmpty(node.HarvestCraft);
-            ImGui.TextColored(has ? UiColors.Match : UiColors.Warn, has ? node.HarvestCraft : "(none selected)");
+            UiText.Colored(has ? UiColors.Match : UiColors.Warn, has ? node.HarvestCraft : "(none selected)");
 
             if (!harvest.IsBuilt) ImGui.TextColored(UiColors.Warn, "Couldn't load the harvest craft list.");
 
@@ -140,7 +140,7 @@ public static class GraphEditor
                     if (q.Length > 0 && c.Name.IndexOf(q, StringComparison.OrdinalIgnoreCase) < 0) continue;
                     var selected = string.Equals(c.Name, node.HarvestCraft, StringComparison.Ordinal);
                     if (ImGui.Selectable(c.Name, selected)) node.HarvestCraft = c.Name;
-                    if (ImGui.IsItemHovered()) ImGui.SetTooltip(c.Name);
+                    if (ImGui.IsItemHovered()) UiText.Tooltip(c.Name);
                 }
             }
             ImGui.EndChild();

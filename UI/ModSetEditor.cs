@@ -58,7 +58,7 @@ public static class ModSetEditor
             if (!string.IsNullOrEmpty(_status))
             {
                 ImGui.Spacing();
-                ImGui.TextColored(UiColors.Warn, _status);
+                UiText.Colored(UiColors.Warn, _status);   // carries user-typed set names ('%'-safe rendering)
             }
         }
         ImGui.EndChild();

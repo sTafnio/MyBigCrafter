@@ -49,9 +49,7 @@ public static class ItemSelectionEditor
                 foreach (var path in plan.BasePaths)
                 {
                     var b = BaseTaxonomy.FindBase(path);
-                    ImGui.BulletText(b?.Name ?? path);
-                    ImGui.SameLine(240);
-                    if (ImGui.Button($"X##rm_{path}")) removePath = path;
+                    if (RemovableRow(b?.Name ?? path, $"rm_{path}")) removePath = path;
                 }
                 if (removePath != null) plan.BasePaths.Remove(removePath);
             }
@@ -59,13 +57,13 @@ public static class ItemSelectionEditor
         if (ImGui.Button("Add##addbase")) _addOpen = true;
 
         if (ClusterJewelTypes.DriftWarning != null)
-            ImGui.TextColored(UiColors.Warn, ClusterJewelTypes.DriftWarning);
+            UiText.WrappedColored(UiColors.Warn, ClusterJewelTypes.DriftWarning);   // carries raw mod text ('%'!)
 
         // Advanced (which of those bases to actually craft) - same condition tree as Check nodes.
         ImGui.Spacing();
         ImGui.SeparatorText("Advanced");
         if (plan.Filter?.Children.Count > 0)
-            ImGui.TextWrapped(ConditionEditor.Summary(plan.Filter));
+            UiText.Wrapped(ConditionEditor.Summary(plan.Filter));   // mod labels contain '%'
         if (ImGui.Button("Edit##filter"))
             ConditionEditor.Open("selfilter", plan.Filter, "Advanced filter", allowCategory: true);
 
@@ -90,11 +88,21 @@ public static class ItemSelectionEditor
         foreach (var tag in plan.ClusterTypes)
         {
             var ct = ClusterJewelTypes.ByTag(tag);
-            ImGui.BulletText(ct?.Name ?? tag);
-            ImGui.SameLine(240);
-            if (ImGui.Button($"X##rmct_{tag}")) remove = tag;
+            if (RemovableRow(ct?.Name ?? tag, $"rmct_{tag}")) remove = tag;
         }
         if (remove != null) plan.ClusterTypes.Remove(remove);
+    }
+
+    /// <summary>A bulleted list row with its remove "x" right-aligned to the content edge (same column as the
+    /// condition/mod-set rows), so long names never run underneath the button. True = remove clicked.</summary>
+    private static bool RemovableRow(string name, string id)
+    {
+        UiText.Bullet(name);
+        var bw = ImGui.GetFrameHeight();
+        var xPos = ImGui.GetContentRegionMax().X - bw;
+        ImGui.SameLine();
+        if (ImGui.GetCursorPosX() < xPos) ImGui.SameLine(xPos);
+        return ImGui.Button($"x##{id}", new Vector2(bw, 0));
     }
 
     /// <summary>Renders the Category / Class / Subtype combos, editing the plan.</summary>

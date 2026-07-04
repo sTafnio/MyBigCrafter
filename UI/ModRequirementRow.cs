@@ -56,7 +56,7 @@ public static class ModRequirementRow
             ModAffixPicker.Show(pickId);
         ImGui.PopStyleColor();
         // On a too-narrow window a long name can still clip, so the tooltip carries the full label + change hint.
-        if (hasMod && ImGui.IsItemHovered()) ImGui.SetTooltip(label + "\nClick to change this mod");
+        if (hasMod && ImGui.IsItemHovered()) UiText.Tooltip(label + "\nClick to change this mod");
 
         if (hasMod && req.Tier > 0)
         {
@@ -132,7 +132,7 @@ public static class ModRequirementRow
         if (set.Count > 0) ImGui.PushStyleColor(ImGuiCol.Text, UiColors.Accent);
         var clicked = ImGui.Button($"{label}##minv");
         if (set.Count > 0) ImGui.PopStyleColor();
-        if (ImGui.IsItemHovered()) ImGui.SetTooltip(RollTooltip(req, axes));
+        if (ImGui.IsItemHovered()) UiText.Tooltip(RollTooltip(req, axes));
         if (clicked) ImGui.OpenPopup($"minvals_{id}");
 
         if (!ImGui.BeginPopup($"minvals_{id}")) return;
