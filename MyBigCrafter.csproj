@@ -36,6 +36,8 @@
   <ItemGroup>
     <!-- Full Horticrafting craft table (offline source for the harvest node picker). -->
     <EmbeddedResource Include="Data\harvestcraftoptions.json" />
+    <!-- Starter craft templates, seeded into ConfigDirectory/Crafts when the user has no crafts yet. -->
+    <EmbeddedResource Include="Templates\*.json" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="ImGui.NET" Version="1.90.0.1" />

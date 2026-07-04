@@ -38,6 +38,30 @@ public sealed class CraftStorage
         _configDir = configDirectory ?? ".";
         _folder = Path.Combine(_configDir, "Crafts");
         try { Directory.CreateDirectory(_folder); } catch { /* ignore */ }
+        try { SeedTemplatesIfEmpty(); } catch { /* ignore - templates are a convenience, never a blocker */ }
+    }
+
+    /// <summary>First-run quickstart: when the user has no crafts at all, unpack the embedded starter
+    /// templates (Templates\*.json in the repo) into the Crafts folder so a new user starts from working
+    /// alt-craft skeletons instead of a blank editor.</summary>
+    private void SeedTemplatesIfEmpty()
+    {
+        if (Directory.EnumerateFiles(_folder, "*.json").Any()) return;
+
+        var asm = typeof(CraftStorage).Assembly;
+        foreach (var res in asm.GetManifestResourceNames())
+        {
+            // Manifest names are "<RootNamespace>.Templates.<original file name>" - the folder part is
+            // namespace-mangled but the file name survives verbatim (spaces, '+' and all).
+            const string marker = ".Templates.";
+            var i = res.IndexOf(marker, StringComparison.Ordinal);
+            if (i < 0 || !res.EndsWith(".json", StringComparison.OrdinalIgnoreCase)) continue;
+
+            using var s = asm.GetManifestResourceStream(res);
+            if (s == null) continue;
+            using var sr = new StreamReader(s, Encoding.UTF8);
+            File.WriteAllText(Path.Combine(_folder, res[(i + marker.Length)..]), sr.ReadToEnd());
+        }
     }
 
     public string FolderPath => _folder;

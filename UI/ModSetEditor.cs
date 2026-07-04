@@ -36,7 +36,7 @@ public static class ModSetEditor
             if (sets.Count == 0) ImGui.TextDisabled("No sets yet.");
 
             ImGui.Spacing();
-            if (ImGui.Button("+ add set"))
+            if (ImGui.Button("+ Add set"))
             {
                 sets.Add(new ModSet { Name = FreshName(plan) });
                 _selected = sets.Count - 1;
@@ -124,7 +124,7 @@ public static class ModSetEditor
         if (set.Mods.Count == 0) ImGui.TextDisabled("No mods in this set yet.");
 
         ImGui.Spacing();
-        if (ImGui.Button("+ mod"))
+        if (ImGui.Button("+ Mod"))
         {
             set.Mods.Add(new ModRequirement());
             ModAffixPicker.Show(PickId(set.Mods.Count - 1));

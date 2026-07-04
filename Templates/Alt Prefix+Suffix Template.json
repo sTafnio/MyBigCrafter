@@ -1,0 +1,683 @@
+{
+  "Name": "Alt Prefix+Suffix Template",
+  "ItemClass": "",
+  "Subtype": "",
+  "ClusterTypes": [],
+  "BasePaths": [],
+  "Filter": {
+    "Kind": "Group",
+    "Negate": false,
+    "Op": "All",
+    "CountOp": ">=",
+    "CountValue": 1,
+    "Children": [
+      {
+        "Kind": "Field",
+        "Negate": true,
+        "Op": "All",
+        "CountOp": ">=",
+        "CountValue": 1,
+        "Children": [],
+        "Field": "Rarity",
+        "Number": {
+          "Mode": "Any",
+          "Value": 0,
+          "Min": 0,
+          "Max": 0
+        },
+        "Value": "Unique",
+        "Set": "",
+        "SetScope": "Mods",
+        "SetInvert": false
+      }
+    ],
+    "Field": "ItemLevel",
+    "Number": {
+      "Mode": "Any",
+      "Value": 0,
+      "Min": 0,
+      "Max": 0
+    },
+    "Value": "",
+    "Set": "",
+    "SetScope": "Mods",
+    "SetInvert": false
+  },
+  "ModSets": [
+    {
+      "Name": "Wanted Prefix",
+      "Mods": []
+    },
+    {
+      "Name": "Wanted Suffix",
+      "Mods": []
+    }
+  ],
+  "Graph": {
+    "Nodes": [
+      {
+        "Id": 1,
+        "Type": "Start",
+        "X": 5.0,
+        "Y": 6.0,
+        "Methods": [],
+        "UseShift": false,
+        "Check": {
+          "Kind": "Group",
+          "Negate": false,
+          "Op": "All",
+          "CountOp": ">=",
+          "CountValue": 1,
+          "Children": [],
+          "Field": "ItemLevel",
+          "Number": {
+            "Mode": "Any",
+            "Value": 0,
+            "Min": 0,
+            "Max": 0
+          },
+          "Value": "",
+          "Set": "",
+          "SetScope": "Mods",
+          "SetInvert": false
+        },
+        "HarvestCraft": "",
+        "Next": 8,
+        "OnTrue": -1,
+        "OnFalse": -1
+      },
+      {
+        "Id": 2,
+        "Type": "Finish",
+        "X": 774.0,
+        "Y": 4.0,
+        "Methods": [],
+        "UseShift": false,
+        "Check": {
+          "Kind": "Group",
+          "Negate": false,
+          "Op": "All",
+          "CountOp": ">=",
+          "CountValue": 1,
+          "Children": [],
+          "Field": "ItemLevel",
+          "Number": {
+            "Mode": "Any",
+            "Value": 0,
+            "Min": 0,
+            "Max": 0
+          },
+          "Value": "",
+          "Set": "",
+          "SetScope": "Mods",
+          "SetInvert": false
+        },
+        "HarvestCraft": "",
+        "Next": -1,
+        "OnTrue": -1,
+        "OnFalse": -1
+      },
+      {
+        "Id": 3,
+        "Type": "Check",
+        "X": 458.0,
+        "Y": 9.0,
+        "Methods": [],
+        "UseShift": false,
+        "Check": {
+          "Kind": "Group",
+          "Negate": false,
+          "Op": "All",
+          "CountOp": ">=",
+          "CountValue": 2,
+          "Children": [
+            {
+              "Kind": "Set",
+              "Negate": false,
+              "Op": "All",
+              "CountOp": ">=",
+              "CountValue": 1,
+              "Children": [],
+              "Field": "ItemLevel",
+              "Number": {
+                "Mode": "Any",
+                "Value": 3,
+                "Min": 0,
+                "Max": 0
+              },
+              "Value": "",
+              "Set": "Wanted Prefix",
+              "SetScope": "Mods",
+              "SetInvert": false
+            },
+            {
+              "Kind": "Set",
+              "Negate": false,
+              "Op": "All",
+              "CountOp": ">=",
+              "CountValue": 1,
+              "Children": [],
+              "Field": "ItemLevel",
+              "Number": {
+                "Mode": "Any",
+                "Value": 0,
+                "Min": 0,
+                "Max": 0
+              },
+              "Value": "",
+              "Set": "Wanted Suffix",
+              "SetScope": "Mods",
+              "SetInvert": false
+            }
+          ],
+          "Field": "ItemLevel",
+          "Number": {
+            "Mode": "Any",
+            "Value": 0,
+            "Min": 0,
+            "Max": 0
+          },
+          "Value": "",
+          "Set": "",
+          "SetScope": "Mods",
+          "SetInvert": false
+        },
+        "HarvestCraft": "",
+        "Next": -1,
+        "OnTrue": 2,
+        "OnFalse": 14
+      },
+      {
+        "Id": 4,
+        "Type": "Apply",
+        "X": 772.0,
+        "Y": 134.0,
+        "Methods": [
+          "Orb of Alteration"
+        ],
+        "UseShift": true,
+        "Check": {
+          "Kind": "Group",
+          "Negate": false,
+          "Op": "All",
+          "CountOp": ">=",
+          "CountValue": 1,
+          "Children": [],
+          "Field": "ItemLevel",
+          "Number": {
+            "Mode": "Any",
+            "Value": 0,
+            "Min": 0,
+            "Max": 0
+          },
+          "Value": "",
+          "Set": "",
+          "SetScope": "Mods",
+          "SetInvert": false
+        },
+        "HarvestCraft": "",
+        "Next": 3,
+        "OnTrue": -1,
+        "OnFalse": -1
+      },
+      {
+        "Id": 5,
+        "Type": "Apply",
+        "X": 773.0,
+        "Y": 202.0,
+        "Methods": [
+          "Orb of Augmentation"
+        ],
+        "UseShift": false,
+        "Check": {
+          "Kind": "Group",
+          "Negate": false,
+          "Op": "All",
+          "CountOp": ">=",
+          "CountValue": 1,
+          "Children": [],
+          "Field": "ItemLevel",
+          "Number": {
+            "Mode": "Any",
+            "Value": 0,
+            "Min": 0,
+            "Max": 0
+          },
+          "Value": "",
+          "Set": "",
+          "SetScope": "Mods",
+          "SetInvert": false
+        },
+        "HarvestCraft": "",
+        "Next": 3,
+        "OnTrue": -1,
+        "OnFalse": -1
+      },
+      {
+        "Id": 8,
+        "Type": "Check",
+        "X": 5.0,
+        "Y": 71.0,
+        "Methods": [],
+        "UseShift": false,
+        "Check": {
+          "Kind": "Group",
+          "Negate": false,
+          "Op": "All",
+          "CountOp": ">=",
+          "CountValue": 1,
+          "Children": [
+            {
+              "Kind": "Field",
+              "Negate": false,
+              "Op": "All",
+              "CountOp": ">=",
+              "CountValue": 1,
+              "Children": [],
+              "Field": "Identified",
+              "Number": {
+                "Mode": "Any",
+                "Value": 0,
+                "Min": 0,
+                "Max": 0
+              },
+              "Value": "",
+              "Set": "",
+              "SetScope": "Mods",
+              "SetInvert": false
+            }
+          ],
+          "Field": "ItemLevel",
+          "Number": {
+            "Mode": "Any",
+            "Value": 0,
+            "Min": 0,
+            "Max": 0
+          },
+          "Value": "",
+          "Set": "",
+          "SetScope": "Mods",
+          "SetInvert": false
+        },
+        "HarvestCraft": "",
+        "Next": -1,
+        "OnTrue": 9,
+        "OnFalse": 12
+      },
+      {
+        "Id": 9,
+        "Type": "Check",
+        "X": 4.0,
+        "Y": 137.0,
+        "Methods": [],
+        "UseShift": false,
+        "Check": {
+          "Kind": "Group",
+          "Negate": false,
+          "Op": "All",
+          "CountOp": ">=",
+          "CountValue": 1,
+          "Children": [
+            {
+              "Kind": "Field",
+              "Negate": false,
+              "Op": "All",
+              "CountOp": ">=",
+              "CountValue": 1,
+              "Children": [],
+              "Field": "Rarity",
+              "Number": {
+                "Mode": "Any",
+                "Value": 0,
+                "Min": 0,
+                "Max": 0
+              },
+              "Value": "Rare",
+              "Set": "",
+              "SetScope": "Mods",
+              "SetInvert": false
+            }
+          ],
+          "Field": "ItemLevel",
+          "Number": {
+            "Mode": "Any",
+            "Value": 0,
+            "Min": 0,
+            "Max": 0
+          },
+          "Value": "",
+          "Set": "",
+          "SetScope": "Mods",
+          "SetInvert": false
+        },
+        "HarvestCraft": "",
+        "Next": -1,
+        "OnTrue": 11,
+        "OnFalse": 10
+      },
+      {
+        "Id": 10,
+        "Type": "Check",
+        "X": 6.0,
+        "Y": 204.0,
+        "Methods": [],
+        "UseShift": false,
+        "Check": {
+          "Kind": "Group",
+          "Negate": false,
+          "Op": "All",
+          "CountOp": ">=",
+          "CountValue": 1,
+          "Children": [
+            {
+              "Kind": "Field",
+              "Negate": false,
+              "Op": "All",
+              "CountOp": ">=",
+              "CountValue": 1,
+              "Children": [],
+              "Field": "Rarity",
+              "Number": {
+                "Mode": "Any",
+                "Value": 0,
+                "Min": 0,
+                "Max": 0
+              },
+              "Value": "Normal",
+              "Set": "",
+              "SetScope": "Mods",
+              "SetInvert": false
+            }
+          ],
+          "Field": "ItemLevel",
+          "Number": {
+            "Mode": "Any",
+            "Value": 0,
+            "Min": 0,
+            "Max": 0
+          },
+          "Value": "",
+          "Set": "",
+          "SetScope": "Mods",
+          "SetInvert": false
+        },
+        "HarvestCraft": "",
+        "Next": -1,
+        "OnTrue": 13,
+        "OnFalse": 3
+      },
+      {
+        "Id": 11,
+        "Type": "Apply",
+        "X": 199.0,
+        "Y": 139.0,
+        "Methods": [
+          "Orb of Scouring"
+        ],
+        "UseShift": false,
+        "Check": {
+          "Kind": "Group",
+          "Negate": false,
+          "Op": "All",
+          "CountOp": ">=",
+          "CountValue": 1,
+          "Children": [],
+          "Field": "ItemLevel",
+          "Number": {
+            "Mode": "Any",
+            "Value": 0,
+            "Min": 0,
+            "Max": 0
+          },
+          "Value": "",
+          "Set": "",
+          "SetScope": "Mods",
+          "SetInvert": false
+        },
+        "HarvestCraft": "",
+        "Next": 10,
+        "OnTrue": -1,
+        "OnFalse": -1
+      },
+      {
+        "Id": 12,
+        "Type": "Apply",
+        "X": 199.0,
+        "Y": 73.0,
+        "Methods": [
+          "Scroll of Wisdom"
+        ],
+        "UseShift": false,
+        "Check": {
+          "Kind": "Group",
+          "Negate": false,
+          "Op": "All",
+          "CountOp": ">=",
+          "CountValue": 1,
+          "Children": [],
+          "Field": "ItemLevel",
+          "Number": {
+            "Mode": "Any",
+            "Value": 0,
+            "Min": 0,
+            "Max": 0
+          },
+          "Value": "",
+          "Set": "",
+          "SetScope": "Mods",
+          "SetInvert": false
+        },
+        "HarvestCraft": "",
+        "Next": 9,
+        "OnTrue": -1,
+        "OnFalse": -1
+      },
+      {
+        "Id": 13,
+        "Type": "Apply",
+        "X": 202.0,
+        "Y": 205.0,
+        "Methods": [
+          "Orb of Transmutation"
+        ],
+        "UseShift": false,
+        "Check": {
+          "Kind": "Group",
+          "Negate": false,
+          "Op": "All",
+          "CountOp": ">=",
+          "CountValue": 1,
+          "Children": [],
+          "Field": "ItemLevel",
+          "Number": {
+            "Mode": "Any",
+            "Value": 0,
+            "Min": 0,
+            "Max": 0
+          },
+          "Value": "",
+          "Set": "",
+          "SetScope": "Mods",
+          "SetInvert": false
+        },
+        "HarvestCraft": "",
+        "Next": 3,
+        "OnTrue": -1,
+        "OnFalse": -1
+      },
+      {
+        "Id": 14,
+        "Type": "Check",
+        "X": 467.0,
+        "Y": 127.0,
+        "Methods": [],
+        "UseShift": false,
+        "Check": {
+          "Kind": "Group",
+          "Negate": false,
+          "Op": "All",
+          "CountOp": ">=",
+          "CountValue": 1,
+          "Children": [
+            {
+              "Kind": "Set",
+              "Negate": false,
+              "Op": "All",
+              "CountOp": ">=",
+              "CountValue": 1,
+              "Children": [],
+              "Field": "ItemLevel",
+              "Number": {
+                "Mode": "Any",
+                "Value": 0,
+                "Min": 0,
+                "Max": 0
+              },
+              "Value": "",
+              "Set": "Wanted Prefix",
+              "SetScope": "Mods",
+              "SetInvert": false
+            },
+            {
+              "Kind": "Field",
+              "Negate": false,
+              "Op": "All",
+              "CountOp": ">=",
+              "CountValue": 1,
+              "Children": [],
+              "Field": "OpenSuffix",
+              "Number": {
+                "Mode": "Any",
+                "Value": 0,
+                "Min": 0,
+                "Max": 0
+              },
+              "Value": "",
+              "Set": "",
+              "SetScope": "Mods",
+              "SetInvert": false
+            }
+          ],
+          "Field": "ItemLevel",
+          "Number": {
+            "Mode": "Any",
+            "Value": 0,
+            "Min": 0,
+            "Max": 0
+          },
+          "Value": "",
+          "Set": "",
+          "SetScope": "Mods",
+          "SetInvert": false
+        },
+        "HarvestCraft": "",
+        "Next": -1,
+        "OnTrue": 5,
+        "OnFalse": 15
+      },
+      {
+        "Id": 15,
+        "Type": "Check",
+        "X": 472.0,
+        "Y": 208.0,
+        "Methods": [],
+        "UseShift": false,
+        "Check": {
+          "Kind": "Group",
+          "Negate": false,
+          "Op": "All",
+          "CountOp": ">=",
+          "CountValue": 1,
+          "Children": [
+            {
+              "Kind": "Set",
+              "Negate": false,
+              "Op": "All",
+              "CountOp": ">=",
+              "CountValue": 1,
+              "Children": [],
+              "Field": "ItemLevel",
+              "Number": {
+                "Mode": "Any",
+                "Value": 0,
+                "Min": 0,
+                "Max": 0
+              },
+              "Value": "",
+              "Set": "Wanted Suffix",
+              "SetScope": "Mods",
+              "SetInvert": false
+            },
+            {
+              "Kind": "Field",
+              "Negate": false,
+              "Op": "All",
+              "CountOp": ">=",
+              "CountValue": 1,
+              "Children": [],
+              "Field": "OpenPrefix",
+              "Number": {
+                "Mode": "Any",
+                "Value": 0,
+                "Min": 0,
+                "Max": 0
+              },
+              "Value": "",
+              "Set": "",
+              "SetScope": "Mods",
+              "SetInvert": false
+            }
+          ],
+          "Field": "ItemLevel",
+          "Number": {
+            "Mode": "Any",
+            "Value": 0,
+            "Min": 0,
+            "Max": 0
+          },
+          "Value": "",
+          "Set": "",
+          "SetScope": "Mods",
+          "SetInvert": false
+        },
+        "HarvestCraft": "",
+        "Next": -1,
+        "OnTrue": 5,
+        "OnFalse": 4
+      }
+    ],
+    "NextId": 16,
+    "Start": {
+      "Id": 1,
+      "Type": "Start",
+      "X": 5.0,
+      "Y": 6.0,
+      "Methods": [],
+      "UseShift": false,
+      "Check": {
+        "Kind": "Group",
+        "Negate": false,
+        "Op": "All",
+        "CountOp": ">=",
+        "CountValue": 1,
+        "Children": [],
+        "Field": "ItemLevel",
+        "Number": {
+          "Mode": "Any",
+          "Value": 0,
+          "Min": 0,
+          "Max": 0
+        },
+        "Value": "",
+        "Set": "",
+        "SetScope": "Mods",
+        "SetInvert": false
+      },
+      "HarvestCraft": "",
+      "Next": 8,
+      "OnTrue": -1,
+      "OnFalse": -1
+    },
+    "HasHarvestNode": false
+  }
+}
