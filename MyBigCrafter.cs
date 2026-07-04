@@ -5,6 +5,7 @@ using System.Numerics;
 using System.Threading;
 using ExileCore;
 using ExileCore.Shared;
+using ExileCore.Shared.Enums;
 using ImGuiNET;
 using MyBigCrafter.Data;
 using MyBigCrafter.Model;
@@ -33,7 +34,8 @@ public class MyBigCrafter : BaseSettingsPlugin<MyBigCrafterSettings>
     private static readonly string[] NoCrafts = { "(no saved crafts)" };
 
     private string[] _craftFiles = Array.Empty<string>();
-    private string[] _stashTabs = Array.Empty<string>();
+    private string[] _stashTabs = Array.Empty<string>();      // Normal/Premium/Quad -- input/output roles
+    private string[] _currencyTabs = Array.Empty<string>();   // Currency tabs -- currency role only
     private int _loadIdx = -1;   // -1 = nothing selected in the Open dropdown
     private bool _queueAddOpen;
     private string _queueAddSearch = "";
@@ -143,25 +145,30 @@ public class MyBigCrafter : BaseSettingsPlugin<MyBigCrafterSettings>
     private void DrawStashTabConfig()
     {
         RefreshStashTabs();
-        if (_stashTabs.Length == 0)
+        if (_stashTabs.Length == 0 && _currencyTabs.Length == 0)
         {
             ImGui.TextColored(UiColors.Warn, "Open your stash once in-game to load tab names.");
             return;
         }
-        TabCombo("Input tab", () => _run.InputTab, v => _run.InputTab = v);
-        TabCombo("Currency tab", () => _run.CurrencyTab, v => _run.CurrencyTab = v);
-        TabCombo("Output tab", () => _run.OutputTab, v => _run.OutputTab = v);
+        TabCombo("Input tab", _stashTabs, () => _run.InputTab, v => _run.InputTab = v);
+        TabCombo("Currency tab", _currencyTabs, () => _run.CurrencyTab, v => _run.CurrencyTab = v);
+        TabCombo("Output tab", _stashTabs, () => _run.OutputTab, v => _run.OutputTab = v);
     }
 
-    private void TabCombo(string label, Func<string> get, Action<string> set)
+    private void TabCombo(string label, string[] options, Func<string> get, Action<string> set)
     {
         ImGui.TextUnformatted(label);
         ImGui.SameLine(140);
-        var cur = Array.IndexOf(_stashTabs, get());
-        ImGui.SetNextItemWidth(200);
-        if (ImGui.Combo($"##tab_{label}", ref cur, _stashTabs, _stashTabs.Length) && cur >= 0)
+        if (options.Length == 0)
         {
-            set(_stashTabs[cur]);
+            ImGui.TextDisabled("none found");
+            return;
+        }
+        var cur = Array.IndexOf(options, get());
+        ImGui.SetNextItemWidth(200);
+        if (ImGui.Combo($"##tab_{label}", ref cur, options, options.Length) && cur >= 0)
+        {
+            set(options[cur]);
             SaveRun();
         }
     }
@@ -715,15 +722,25 @@ public class MyBigCrafter : BaseSettingsPlugin<MyBigCrafterSettings>
             if (tabs is not { Count: > 0 }) return;
 
             // PlayerStashTabs is in server order, not the order shown in-game - sort by VisibleIndex
-            // (verified live: list position 0 was the 8th visible tab).
-            var list = new List<(string Name, int Visible)>(tabs.Count);
+            // (verified live: list position 0 was the 8th visible tab). It also lists entries that
+            // are no real tabs at all: the map stash's internal sub-stashes (one per section, ALL
+            // named "1", type Map), folders and remove-only leftovers. Offer only what a role can
+            // use - Normal/Premium/Quad for input/output, Currency tabs for the currency role.
+            var normal = new List<(string Name, int Visible)>(tabs.Count);
+            var currency = new List<(string Name, int Visible)>();
             foreach (var t in tabs)
             {
                 var n = t?.Name;
-                if (!string.IsNullOrEmpty(n)) list.Add((n, t.VisibleIndex));
+                if (string.IsNullOrEmpty(n) || t.Flags.HasFlag(InventoryTabFlags.RemoveOnly)) continue;
+                if (t.TabType is InventoryTabType.Normal or InventoryTabType.Premium or InventoryTabType.Quad)
+                    normal.Add((n, t.VisibleIndex));
+                else if (t.TabType == InventoryTabType.Currency)
+                    currency.Add((n, t.VisibleIndex));
             }
-            if (list.Count > 0)
-                _stashTabs = list.OrderBy(x => x.Visible).Select(x => x.Name).ToArray();
+            if (normal.Count > 0)
+                _stashTabs = normal.OrderBy(x => x.Visible).Select(x => x.Name).ToArray();
+            if (currency.Count > 0)
+                _currencyTabs = currency.OrderBy(x => x.Visible).Select(x => x.Name).ToArray();
         }
         catch { /* stash not open */ }
     }

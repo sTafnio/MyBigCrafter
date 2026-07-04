@@ -34,8 +34,13 @@ public sealed class StashController
         var tabs = _gc?.IngameState?.Data?.ServerData?.PlayerStashTabs;
         if (tabs == null) return -1;
         foreach (var t in tabs)
-            if (t != null && string.Equals(t.Name, name, StringComparison.Ordinal))
+        {
+            if (t == null || !string.Equals(t.Name, name, StringComparison.Ordinal)) continue;
+
+            if (t.TabType is InventoryTabType.Normal or InventoryTabType.Premium
+                or InventoryTabType.Quad or InventoryTabType.Currency)
                 return t.VisibleIndex;
+        }
         return -1;
     }
 
