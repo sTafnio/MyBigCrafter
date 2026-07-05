@@ -39,6 +39,12 @@ public static class FieldCatalog
         Num ("ImplicitCount", "Implicit count", i => i.ModsInfo?.ImplicitMods?.Count ?? 0),
         Num ("FracturedCount", "Fractured count", i => i.FracturedModCount),
         Num ("VeiledCount", "Veiled count",   i => i.VeiledModCount),
+        Num ("MemoryStrands", "Memory strands", i => i.MemoryStrands),
+        // Defensive scores (0 on items without the relevant defence).
+        Num ("Armour",       "Armour",         i => i.ArmourInfo?.Armour ?? 0),
+        Num ("Evasion",      "Evasion",        i => i.ArmourInfo?.Evasion ?? 0),
+        Num ("EnergyShield", "Energy shield",  i => i.ArmourInfo?.ES ?? 0),
+        Num ("Perfection",   "Perfection",     i => i.ArmourInfo?.Perfection ?? 0),
         Num ("MapTier",     "Map tier",       i => i.MapInfo?.Tier ?? 0),
         // Aggregated map reward totals (the tooltip values, already summed across all mods by the game).
         Num ("MapQuantity", "Map item quantity",  i => i.MapInfo?.Quantity ?? 0),
