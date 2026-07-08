@@ -328,24 +328,25 @@ public class MyBigCrafter : BaseSettingsPlugin<MyBigCrafterSettings>
     {
         var hasFiles = _craftFiles.Length > 0;
         const float labelW = 64f;
-
-        // The craft currently in the editor: its name, save it, start fresh, or branch a copy.
-        ImGui.AlignTextToFramePadding();
-        ImGui.TextColored(UiColors.Accent, "Craft");
-        ImGui.SameLine(labelW);
-        ImGui.SetNextItemWidth(RowFieldWidth("Save", "New", "Duplicate"));
         var name = _plan.Name;
-        if (ImGui.InputTextWithHint("##craftname", "Name this craft to save it...", ref name, 64)) _plan.Name = name;
         var canSave = !string.IsNullOrWhiteSpace(name);
-        ImGui.SameLine();
-        ImGui.BeginDisabled(!canSave);
-        if (ImGui.Button("Save"))
+
+        // Open / manage a saved craft. Selecting one in the combo loads it straight into the editor.
+        var items = hasFiles ? _craftFiles : NoCrafts;
+        var idx = Math.Clamp(_loadIdx, -1, items.Length - 1);   // -1 shows an empty combo (no craft selected)
+        ImGui.AlignTextToFramePadding();
+        ImGui.TextColored(UiColors.Accent, "Open");
+        ImGui.SameLine(labelW);
+        ImGui.BeginDisabled(!hasFiles);
+        ImGui.SetNextItemWidth(RowFieldWidth("New", "Duplicate", "Delete"));
+        if (ImGui.Combo("##savedlist", ref idx, items, items.Length) && hasFiles && idx >= 0)
         {
-            if (_storage.Save(_plan, out var err)) { _loadedName = _plan.Name; _status = $"Saved '{_plan.Name}'"; RefreshCraftFiles(); }
-            else _status = "Save failed: " + err;
+            _loadIdx = idx;
+            var loaded = _storage.Load(_craftFiles[idx]);
+            if (loaded != null) { _plan = loaded; _loadedName = _craftFiles[idx]; _status = $"Loaded '{loaded.Name}'"; }
         }
         ImGui.EndDisabled();
-        Tip("Save this craft under the name above.");
+        Tip("Select a saved craft to load it into the editor.");
         ImGui.SameLine();
         if (ImGui.Button("New")) { _plan = new CraftPlan(); _loadedName = ""; _status = "New craft"; }
         Tip("Start a blank new craft.");
@@ -356,25 +357,27 @@ public class MyBigCrafter : BaseSettingsPlugin<MyBigCrafterSettings>
             if (clone != null) { clone.Name = _plan.Name + " copy"; _plan = clone; _loadedName = ""; _status = "Duplicated - save it to keep it"; }
         }
         Tip("Copy this craft under a new name (the original is untouched).");
-
-        // Open / manage a saved craft.
-        var items = hasFiles ? _craftFiles : NoCrafts;
-        var idx = Math.Clamp(_loadIdx, -1, items.Length - 1);   // -1 shows an empty combo (no craft selected)
-        ImGui.AlignTextToFramePadding();
-        ImGui.TextColored(UiColors.Accent, "Open");
-        ImGui.SameLine(labelW);
-        ImGui.BeginDisabled(!hasFiles);
-        ImGui.SetNextItemWidth(RowFieldWidth("Load", "Rename", "Delete"));
-        if (ImGui.Combo("##savedlist", ref idx, items, items.Length)) _loadIdx = idx;
         ImGui.SameLine();
-        ImGui.BeginDisabled(idx < 0);
-        if (ImGui.Button("Load"))
+        ImGui.BeginDisabled(!hasFiles || idx < 0);
+        if (ImGui.Button("Delete")) { _storage.Delete(_craftFiles[idx]); _status = $"Deleted '{_craftFiles[idx]}'"; RefreshCraftFiles(); }
+        ImGui.EndDisabled();
+        Tip("Delete the selected craft's file.");
+
+        // The craft currently in the editor: name it, save it, or rename the loaded craft to that name.
+        ImGui.AlignTextToFramePadding();
+        ImGui.TextColored(UiColors.Accent, "Craft");
+        ImGui.SameLine(labelW);
+        ImGui.SetNextItemWidth(RowFieldWidth("Save", "Rename"));
+        if (ImGui.InputTextWithHint("##craftname", "Name this craft to save it...", ref name, 64)) _plan.Name = name;
+        ImGui.SameLine();
+        ImGui.BeginDisabled(!canSave);
+        if (ImGui.Button("Save"))
         {
-            var loaded = _storage.Load(_craftFiles[idx]);
-            if (loaded != null) { _plan = loaded; _loadedName = _craftFiles[idx]; _status = $"Loaded '{loaded.Name}'"; }
+            if (_storage.Save(_plan, out var err)) { _loadedName = _plan.Name; _status = $"Saved '{_plan.Name}'"; RefreshCraftFiles(); }
+            else _status = "Save failed: " + err;
         }
         ImGui.EndDisabled();
-        Tip("Load the selected craft into the editor.");
+        Tip("Save this craft under the name above.");
         ImGui.SameLine();
         ImGui.BeginDisabled(!canSave || string.IsNullOrEmpty(_loadedName) || _loadedName == _plan.Name);
         if (ImGui.Button("Rename"))
@@ -385,19 +388,13 @@ public class MyBigCrafter : BaseSettingsPlugin<MyBigCrafterSettings>
         }
         ImGui.EndDisabled();
         Tip("Rename the loaded craft to the current name above.");
-        ImGui.SameLine();
-        ImGui.BeginDisabled(idx < 0);
-        if (ImGui.Button("Delete")) { _storage.Delete(_craftFiles[idx]); _status = $"Deleted '{_craftFiles[idx]}'"; RefreshCraftFiles(); }
-        ImGui.EndDisabled();
-        Tip("Delete the selected craft's file.");
-        ImGui.EndDisabled();
 
         // Share via the clipboard. Talks to the OS clipboard directly (ClipboardUtil) - ImGui's clipboard
         // depends on backend wiring and silently broke share strings.
         ImGui.AlignTextToFramePadding();
         ImGui.TextColored(UiColors.Accent, "Share");
         ImGui.SameLine(labelW);
-        if (ImGui.Button("Import from clipboard"))
+        if (ImGui.Button("Import"))
         {
             var imported = _storage.Import(ClipboardUtil.GetText(), out var importError);
             if (imported == null)
@@ -418,7 +415,7 @@ public class MyBigCrafter : BaseSettingsPlugin<MyBigCrafterSettings>
         // Exporting requires a name for the same reason Save does - it exports the craft IN THE EDITOR, and
         // an unnamed (usually blank) editor exports an empty craft that then "imports as nothing" elsewhere.
         ImGui.BeginDisabled(!canSave);
-        if (ImGui.Button("Export to clipboard"))
+        if (ImGui.Button("Export"))
         {
             _status = ClipboardUtil.SetText(_storage.Export(_plan))
                 ? "Copied share string to clipboard"
@@ -429,6 +426,11 @@ public class MyBigCrafter : BaseSettingsPlugin<MyBigCrafterSettings>
             ImGui.SetTooltip(canSave
                 ? "Copy this craft as a share string to the clipboard."
                 : "Name the craft first - Export shares the craft currently in the editor.");
+        ImGui.SameLine();
+        HelpMarker(
+            "Import/Export copy crafts through the system clipboard as share strings.\n\n" +
+            "You can also move crafts by hand: they live as files under\n" +
+            "config -> MyBigCrafter -> Crafts.");
 
         if (!string.IsNullOrEmpty(_status))
         {
@@ -440,6 +442,14 @@ public class MyBigCrafter : BaseSettingsPlugin<MyBigCrafterSettings>
 
     private static void Tip(string text)
     {
+        if (ImGui.IsItemHovered()) ImGui.SetTooltip(text);
+    }
+
+    // A dimmed "(?)" that shows an explanatory tooltip on hover.
+    private static void HelpMarker(string text)
+    {
+        ImGui.AlignTextToFramePadding();
+        ImGui.TextDisabled("(?)");
         if (ImGui.IsItemHovered()) ImGui.SetTooltip(text);
     }
 
