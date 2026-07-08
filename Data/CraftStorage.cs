@@ -108,6 +108,24 @@ public sealed class CraftStorage
         catch (Exception e) { error = e.Message; return false; }
     }
 
+    /// <summary>The on-disk key (file base name, no extension) a craft with this display name is stored under -
+    /// the same normalisation Save/Load/Delete use, and what <see cref="List"/> returns. Lets callers compare a
+    /// loaded craft to the file list and detect a name change.</summary>
+    public string FileKey(string name) => Sanitize(name);
+
+    /// <summary>Saves <paramref name="plan"/>, then - if its name changed from <paramref name="previousKey"/> -
+    /// removes the old file so a rename MOVES the craft instead of leaving an orphaned copy under the old name.
+    /// Writes the new file BEFORE deleting the old, so a failed save never destroys the original. Pass an empty
+    /// <paramref name="previousKey"/> for a brand-new craft (nothing to reconcile).</summary>
+    public bool Save(CraftPlan plan, string previousKey, out string error)
+    {
+        if (!Save(plan, out error)) return false;
+        var key = Sanitize(plan.Name);
+        if (!string.IsNullOrEmpty(previousKey) && !string.Equals(previousKey, key, StringComparison.OrdinalIgnoreCase))
+            Delete(previousKey);
+        return true;
+    }
+
     public CraftPlan Load(string name)
     {
         try

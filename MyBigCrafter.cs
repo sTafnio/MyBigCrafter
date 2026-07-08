@@ -359,7 +359,17 @@ public class MyBigCrafter : BaseSettingsPlugin<MyBigCrafterSettings>
         Tip("Copy this craft under a new name (the original is untouched).");
         ImGui.SameLine();
         ImGui.BeginDisabled(!hasFiles || idx < 0);
-        if (ImGui.Button("Delete")) { _storage.Delete(_craftFiles[idx]); _status = $"Deleted '{_craftFiles[idx]}'"; RefreshCraftFiles(); }
+        if (ImGui.Button("Delete"))
+        {
+            _status = $"Deleted '{_craftFiles[idx]}'";
+            _storage.Delete(_craftFiles[idx]);
+            // Leave nothing selected (don't let the next craft slide into the freed slot) and clear the
+            // name field so it can't rename/re-save under the just-deleted name.
+            _loadIdx = -1;
+            _loadedName = "";
+            _plan.Name = name = "";
+            RefreshCraftFiles();
+        }
         ImGui.EndDisabled();
         Tip("Delete the selected craft's file.");
 
@@ -373,21 +383,36 @@ public class MyBigCrafter : BaseSettingsPlugin<MyBigCrafterSettings>
         ImGui.BeginDisabled(!canSave);
         if (ImGui.Button("Save"))
         {
-            if (_storage.Save(_plan, out var err)) { _loadedName = _plan.Name; _status = $"Saved '{_plan.Name}'"; RefreshCraftFiles(); }
+            // Reconcile against the loaded file: if the name changed, this renames in place (drops the old
+            // file) instead of leaving an orphaned copy. _loadedName is "" for a new craft (plain create).
+            var renamed = !string.IsNullOrEmpty(_loadedName) && _loadedName != _storage.FileKey(_plan.Name);
+            if (_storage.Save(_plan, _loadedName, out var err))
+            {
+                _loadedName = _storage.FileKey(_plan.Name);
+                _status = renamed ? $"Renamed to '{_plan.Name}'" : $"Saved '{_plan.Name}'";
+                RefreshCraftFiles();
+                SelectLoaded();
+            }
             else _status = "Save failed: " + err;
         }
         ImGui.EndDisabled();
-        Tip("Save this craft under the name above.");
+        Tip("Save this craft. Renames the file in place if you changed a loaded craft's name (no duplicate).");
         ImGui.SameLine();
-        ImGui.BeginDisabled(!canSave || string.IsNullOrEmpty(_loadedName) || _loadedName == _plan.Name);
+        ImGui.BeginDisabled(!canSave || string.IsNullOrEmpty(_loadedName) || _loadedName == _storage.FileKey(_plan.Name));
         if (ImGui.Button("Rename"))
         {
-            _storage.Delete(_loadedName);
-            if (_storage.Save(_plan, out var err)) { _status = $"Renamed '{_loadedName}' to '{_plan.Name}'"; _loadedName = _plan.Name; RefreshCraftFiles(); }
+            var old = _loadedName;
+            if (_storage.Save(_plan, _loadedName, out var err))
+            {
+                _loadedName = _storage.FileKey(_plan.Name);
+                _status = $"Renamed '{old}' to '{_plan.Name}'";
+                RefreshCraftFiles();
+                SelectLoaded();
+            }
             else _status = "Rename failed: " + err;
         }
         ImGui.EndDisabled();
-        Tip("Rename the loaded craft to the current name above.");
+        Tip("Rename the loaded craft to the current name (moves the file, no duplicate).");
 
         // Share via the clipboard. Talks to the OS clipboard directly (ClipboardUtil) - ImGui's clipboard
         // depends on backend wiring and silently broke share strings.
@@ -757,6 +782,11 @@ public class MyBigCrafter : BaseSettingsPlugin<MyBigCrafterSettings>
         _craftFiles = _storage.List().ToArray();
         if (_loadIdx >= _craftFiles.Length) _loadIdx = -1;
     }
+
+    // Point the Open dropdown at the currently-loaded craft (after a save/rename) so it shows as selected
+    // instead of drifting to whatever craft now sits at the old index. -1 (not found) leaves it empty.
+    private void SelectLoaded() =>
+        _loadIdx = Array.FindIndex(_craftFiles, f => string.Equals(f, _loadedName, StringComparison.OrdinalIgnoreCase));
 
     private void RefreshStashTabs()
     {
